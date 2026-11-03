@@ -10,6 +10,14 @@ your own scripts. Pick your critter: **Spider**, **Robot**, **Cat**, **Owl** or 
 
 Python standard library only: nothing to install except Python itself.
 
+The code and the documentation was created using AI native coding techniques with the assistance of 
+Claude Code. Its part of my project to explore AI coding and generally get back into coding.
+
+Feedback and contributions appreciated. 
+
+In its current incarnation (v3.x) only the Windows version is tested, and the MacOS version is untested,
+although the Mac version has been tested in v2.x.
+
 > Desk_Critter is an independent project. It works with the Claude apps but is not affiliated with or
 > endorsed by Anthropic. Claude is a trademark of Anthropic.
 
