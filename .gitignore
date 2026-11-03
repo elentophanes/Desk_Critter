@@ -1,0 +1,18 @@
+# Python
+__pycache__/
+*.pyc
+
+# Runtime logs
+*.log
+
+# Local settings (chosen critter, remembered window position)
+desk_critter_settings.json
+
+# Generated preview (tools/preview_critters.py)
+critters_preview.svg
+
+# Private notes about your own machines (paths, setup); read by Claude Code, never committed
+CLAUDE.local.md
+
+# macOS Finder folder settings
+.DS_Store
