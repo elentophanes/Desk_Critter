@@ -67,7 +67,7 @@ in section 5 inaccurate.
 
 ## 8. Governing law
 
-This agreement is governed by the laws of [Sweden], without regard to conflict-of-law rules.
+This agreement is governed by the laws of Sweden, without regard to conflict-of-law rules.
 
 ---
 By signing through the CLA Assistant on GitHub, You accept this agreement for all past and future
