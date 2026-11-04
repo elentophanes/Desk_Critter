@@ -44,6 +44,13 @@ def init(log_func):
     _log[0] = log_func
 
 
+def sqlite_ro_uri(path):
+    """'file:...?mode=ro' for sqlite3.connect(..., uri=True). The path is URL-quoted, so a '#', '?'
+    or '%' in it (e.g. in a user name) cannot cut off '?mode=ro' and open the file read-write."""
+    from urllib.request import pathname2url
+    return "file:" + pathname2url(path) + "?mode=ro"
+
+
 def dpi_scale():
     return 1.0
 
@@ -59,15 +66,19 @@ def work_area(root):
     return 0, 0, root.winfo_screenwidth(), root.winfo_screenheight() - 48
 
 
-def virtual_screen(root):
-    return 0, 0, root.winfo_screenwidth(), root.winfo_screenheight()
-
-
 def play_chime():
     pass
 
 
+def virtual_screen(root):
+    return 0, 0, root.winfo_screenwidth(), root.winfo_screenheight()
+
+
 def play_sound(path):
+    return False
+
+
+def claude_in_front():
     return False
 
 
@@ -75,13 +86,9 @@ def warm_up():
     pass
 
 
-def claude_in_front():
+def open_claude():
     return False
 
 
 def start_watchers(on_text, on_flash, poll_seconds=1.5, watch_notifications=True, watch_flash=True):
     log("no notification watcher on this operating system")
-
-
-def open_claude():
-    return False

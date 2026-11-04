@@ -36,6 +36,7 @@ import time
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from critter_event import send          # writes the line the critter follows
 
+CMD_SPECIAL = set('&|<>^%!"\r\n')   # cmd.exe would act on these in a .bat/.cmd argument
 TICK_SECONDS = 60      # "still working" this often; the critter drops the dots after 600 s of silence
 
 
@@ -58,6 +59,25 @@ def safe_send(kind, text, session):
         print(f"critter_run: could not tell the critter ({e})", file=sys.stderr)
 
 
+def parse(args):
+    name = None
+    while args:
+        if args[0] == "--name" and len(args) > 1:
+            name, args = args[1], args[2:]
+        elif args[0] == "--":
+            args = args[1:]
+            break
+        else:
+            break
+    return name, args
+
+
+def unsafe_for_cmd(args):
+    """The cmd.exe special characters found in args (sorted text), or '' if none.
+    Python cannot quote these safely for a batch file, so they could run a second command."""
+    return "".join(sorted({ch for a in args for ch in a if ch in CMD_SPECIAL}))
+
+
 def main(args):
     name, command = parse(list(args))
     if not command:
@@ -74,6 +94,15 @@ def main(args):
         return 127
     argv = [exe] + command[1:]
     use_shell = os.name == "nt" and exe.lower().endswith((".bat", ".cmd"))   # batch files need cmd.exe
+    if use_shell:
+        bad = unsafe_for_cmd(command[1:])
+        if bad:
+            safe_send("help", f"{name}: refused, argument has {bad!r} (batch file)", session)
+            safe_send("end", "", session)
+            print(f"critter_run: refused: {os.path.basename(exe)} is a batch file and an argument contains "
+                  f"{bad!r}, which cmd.exe would treat as a command character. Run it with cmd /c yourself "
+                  f"if you mean it.", file=sys.stderr)
+            return 2
 
     start = time.monotonic()
     safe_send("busy", f"{name} running", session)
@@ -112,19 +141,6 @@ def main(args):
         safe_send("end", "", session)        # not working any more (the alert stays up)
     print(f"critter_run: {text}", file=sys.stderr)
     return code if code >= 0 else 1
-
-
-def parse(args):
-    name = None
-    while args:
-        if args[0] == "--name" and len(args) > 1:
-            name, args = args[1], args[2:]
-        elif args[0] == "--":
-            args = args[1:]
-            break
-        else:
-            break
-    return name, args
 
 
 if __name__ == "__main__":

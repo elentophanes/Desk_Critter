@@ -9,6 +9,7 @@ Quick check of the whole program, no screen needed:
     py diag\\check.py         (macOS: python3 diag/check.py)
 
   - fingerprints and compiles every .py / .pyw file in the repo (found automatically)
+  - checks every import is the standard library or the repo's own code (no third-party packages)
   - lists the critters and checks each one's sound files (SOUND, SOUND_DONE) exist
   - asks the Claude Desktop tool (tools/critter_mcp.py) for its tool list, without sending anything to the critter
   - renders all critters into critters_preview.svg (open it in a browser)
@@ -29,7 +30,8 @@ problems = []
 
 files = sorted(os.path.relpath(os.path.join(d, f), root).replace("\\", "/")
                for d, dirs, names in os.walk(root)
-               if not any(part.startswith(".") or part == "__pycache__" for part in os.path.relpath(d, root).split(os.sep))
+               if not any((part.startswith(".") and part != ".") or part == "__pycache__"      # "." is the repo root itself
+                          for part in os.path.relpath(d, root).split(os.sep))
                for f in names if f.endswith((".py", ".pyw")))
 for f in files:
     print(hashlib.sha256(open(f, "rb").read().replace(b"\r\n", b"\n")).hexdigest()[:16], f)
@@ -39,6 +41,31 @@ for f in files:
     except py_compile.PyCompileError as e:
         problems.append(f"does not compile: {f}: {e.msg}")
 print(f"compiled {len(files)} files")
+
+# Standard library only: no third-party packages, so there is nothing to pin and nothing to tamper with
+# on PyPI. Any import must be the standard library or one of this repo's own files or folders.
+own = {os.path.splitext(os.path.basename(f))[0] for f in files} | {f.split("/")[0] for f in files if "/" in f}
+stdlib = getattr(sys, "stdlib_module_names", None)                       # Python 3.10+
+if stdlib is None:
+    print("standard-library check skipped (needs Python 3.10 or newer)")
+else:
+    import ast
+    outside = set()
+    for f in files:
+        for node in ast.walk(ast.parse(open(f, "rb").read(), f)):
+            if isinstance(node, ast.Import):
+                names = [a.name for a in node.names]
+            elif isinstance(node, ast.ImportFrom) and node.level == 0 and node.module:
+                names = [node.module]
+            else:
+                continue
+            for name in names:
+                top = name.split(".")[0]
+                if top not in stdlib and top not in own:
+                    outside.add(f"{top} (in {f})")
+    for item in sorted(outside):
+        problems.append(f"not in the standard library: {item}")
+    print("standard library only:", "yes" if not outside else "NO")
 
 import critters
 found = critters.discover(print)

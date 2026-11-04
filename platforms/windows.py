@@ -19,7 +19,7 @@ import time
 from ctypes import wintypes
 
 from ._base import *                                   # noqa: F401,F403  (defaults)
-from ._base import TRANSPARENT, log
+from ._base import TRANSPARENT, log, sqlite_ro_uri
 
 NAME = "windows"
 
@@ -205,7 +205,7 @@ class NotificationWatcher(threading.Thread):
         last = None
         while True:
             try:
-                con = sqlite3.connect("file:" + self.DB + "?mode=ro", uri=True, timeout=2)
+                con = sqlite3.connect(sqlite_ro_uri(self.DB), uri=True, timeout=2)
                 try:
                     cur = con.cursor()
                     if last is None:                    # ignore notifications from before we started
@@ -236,9 +236,12 @@ class FlashWatcher(threading.Thread):
         if self.msg_id and msg == self.msg_id and wparam == HSHELL_FLASH:
             target = wintypes.HWND(lparam)
             name = process_name(target)
-            log(f"taskbar flash: {name or '?'} | {window_title(target)!r}")
-            if self.react and ALERT_PROCESS_MATCH in name:
-                self.on_flash()
+            if ALERT_PROCESS_MATCH in name:
+                log(f"taskbar flash: {name} | {window_title(target)!r}")
+                if self.react:
+                    self.on_flash()
+            else:                              # privacy: other programs' names and window titles aren't read or logged
+                log("taskbar flash (other program)")
         return user32.DefWindowProcW(hwnd, msg, wparam, lparam)
 
     def run(self):
@@ -285,9 +288,10 @@ def find_claude():
                 break
     if found[0] is None:
         # Ask Windows for the Start-menu entry (works for Store/MSIX installs too).
-        # Prefer the entry named exactly "Claude", not e.g. "Claude Code".
-        ps = ("Get-StartApps | Where-Object Name -like '*Claude*' | "
-              "Sort-Object @{e={$_.Name -ne 'Claude'}}, Name | "
+        # Only the entry named exactly "Claude": any other app with "Claude" in its name
+        # (e.g. "Claude Code", or something pretending) must not be what a double-click starts.
+        # If yours is named differently, set CLAUDE_APP_ID above.
+        ps = ("Get-StartApps | Where-Object Name -eq 'Claude' | "
               "Select-Object -First 1 -ExpandProperty AppID")
         try:
             out = subprocess.run(

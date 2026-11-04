@@ -8,10 +8,11 @@
 __author__ = "Elentophanes"
 __project_id__ = "6075ff8b1744"
 import os, sqlite3
+from urllib.request import pathname2url
 
 src = os.path.expandvars(r"%LOCALAPPDATA%\Microsoft\Windows\Notifications\wpndatabase.db")
 print("exists:", os.path.exists(src))
-con = sqlite3.connect("file:" + src + "?mode=ro", uri=True)
+con = sqlite3.connect("file:" + pathname2url(src) + "?mode=ro", uri=True)
 cur = con.cursor()
 print("tables:", [r[0] for r in cur.execute("select name from sqlite_master where type='table'")])
 print("\nRecent notifications per app:")

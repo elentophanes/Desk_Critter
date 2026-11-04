@@ -56,7 +56,7 @@ def main():
     text = " ".join(text.split())[:300]      # one line, no tabs or newlines
     session = "".join(str(info.get("session_id", "")).split())[:80]
 
-    os.makedirs(os.path.dirname(EVENTS_PATH), exist_ok=True)
+    ensure_events_dir()
     mode = "a"
     try:
         if os.path.getsize(EVENTS_PATH) > MAX_BYTES:
@@ -65,6 +65,17 @@ def main():
         pass
     with open(EVENTS_PATH, mode, encoding="utf-8") as f:
         f.write(f"{time.time():.3f}\t{kind}\t{session}\t{text}\n")
+
+
+def ensure_events_dir():
+    """Create the events folder readable by you only (it holds project names and Claude's messages)."""
+    folder = os.path.dirname(EVENTS_PATH)
+    os.makedirs(folder, exist_ok=True, mode=0o700)
+    if os.name != "nt":
+        try:
+            os.chmod(folder, 0o700)          # also tighten a folder made by an older version
+        except OSError:
+            pass
 
 
 if __name__ == "__main__":

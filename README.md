@@ -10,6 +10,10 @@ your own scripts. Pick your critter: **Spider**, **Robot**, **Cat**, **Owl** or 
 
 Python standard library only: nothing to install except Python itself.
 
+**The only official source is <https://github.com/elentophanes/Desk_Critter>.** Copies anywhere else may
+have been changed. From v3.2 every release is signed; see [Verify your copy](#verify-your-copy).
+What the critter reads, watches and connects to is listed in [PRIVACY.md](PRIVACY.md).
+
 The code and the documentation was created using AI native coding techniques with the assistance of 
 Claude Code. Its part of my project to explore AI coding and generally get back into coding.
 
@@ -94,8 +98,10 @@ git clone https://github.com/elentophanes/Desk_Critter.git
 cd Desk_Critter
 ```
 
-**Option B, without git:** on the repository page click **Code → Download ZIP**,
-then extract it to a folder of your choice.
+**Option B, without git:** download the ZIP of a release from the
+[Releases page](https://github.com/elentophanes/Desk_Critter/releases), together with `SHA256SUMS` and
+`SHA256SUMS.minisig`, check it (see [Verify your copy](#verify-your-copy)), then extract it to a folder of
+your choice. The green **Code → Download ZIP** button gives the latest unreleased code, which isn't signed.
 
 ### 3. Run it
 
@@ -127,11 +133,19 @@ py tools\install.py --startup
 
 This installs the newest version tag into `%USERPROFILE%\Tools\Desk_Critter` and creates a
 **Desk Critter** shortcut in your Startup folder, so it starts each time you sign in.
-Add a tag to pick a version (`py tools\install.py v2.1`) or `--dest D:\Somewhere` for another folder.
+Add a tag to pick a version (`py tools\install.py v3.2`) or `--dest D:\Somewhere` for another folder.
+
+Before copying anything, `install.py` checks that the tag is signed by the maintainer's key and refuses it
+otherwise (see [Verify your copy](#verify-your-copy)). Tags before v3.2 aren't signed; to install one, add
+`--allow-unsigned`, and only for a copy cloned from the official repository.
 
 To update later: quit the critter, run `py tools\install.py`, start the critter again. Program files are
 overwritten; your settings and log in that folder are kept, and nothing is deleted.
 To stop it starting with Windows, remove the shortcut from the Startup folder (`Win+R`, `shell:startup`).
+
+> **Keep the install folder private.** The critter runs every `.py` file in its `critters\` folder,
+> and with `--startup` it does so at every sign-in. Install only into a folder that only you can
+> write to (the default, in your user profile, is fine); not into a shared or network folder.
 
 ### 4b. Start it with Windows by hand (alternative)
 
@@ -140,6 +154,83 @@ To stop it starting with Windows, remove the shortcut from the Startup folder (`
 3. Move the new shortcut into the Startup folder.
 
 The critter now starts each time you sign in. To stop that, remove the shortcut from the Startup folder.
+
+## Verify your copy
+
+The only official source of Desk Critter is **<https://github.com/elentophanes/Desk_Critter>**.
+Copies from anywhere else (other accounts, forks, file-sharing sites, re-uploads) may have been changed.
+Desk Critter can start with Windows and run on every Claude Code event, so a tampered copy would run on
+your computer all the time. Checking takes a minute.
+
+From **v3.2** on, every release is signed twice:
+
+| What | Signed with | Maintainer's key |
+|---|---|---|
+| Each version tag (`v3.2`, ...) | SSH signing key | fingerprint `SHA256:VUgJ7a7SdifPhPjMgiIiQRGQhg7NM+xTNrEQUHKVDtw` |
+| `SHA256SUMS` of each release ZIP | minisign | `RWTM6pijKLU/GohkVvpcjRJVNVfF11xmboP51RVPN2KNBWw1AZHBbgOY` |
+
+Copies of both keys are in `.github/allowed_signers` and `.github/minisign.pub`. A tampered copy could
+replace those files too, so always compare with a source the tamperer can't change:
+
+- the SSH key on GitHub: <https://api.github.com/users/elentophanes/ssh_signing_keys> must list
+  `ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIBM8KXtZ55oM88218W00D7X/YvrYuLh2lh/NPGNYjsAh`
+- this README **on github.com**, not the one in your download
+
+### If you cloned with git
+
+`tools\install.py` checks the tag for you and refuses it if the signature is wrong. To check by hand
+(PowerShell; on macOS the same commands work in Terminal):
+
+```powershell
+cd "$HOME\Documents\Desk_Critter"   # your repo folder
+git remote -v                        # must show https://github.com/elentophanes/Desk_Critter.git
+git fetch --tags
+git -c gpg.ssh.allowedSignersFile=.github/allowed_signers -c gpg.ssh.program=ssh-keygen verify-tag v3.2
+```
+
+Good result (the fingerprint must be exactly the one in the table above):
+```text
+Good "git" signature for 14372117+elentophanes@users.noreply.github.com with ED25519 key SHA256:VUgJ7a7SdifPhPjMgiIiQRGQhg7NM+xTNrEQUHKVDtw
+```
+
+Anything else (`No principal matched`, `no signature found`, another fingerprint) means the tag is not
+the maintainer's. Don't run or install it; please report it (see [SECURITY.md](SECURITY.md)).
+
+### If you downloaded a ZIP
+
+Download all three files for the version from the
+[Releases page](https://github.com/elentophanes/Desk_Critter/releases): `Desk_Critter-v3.2.zip`,
+`SHA256SUMS` and `SHA256SUMS.minisig`. Then check the signature first, then the ZIP.
+
+**Windows** (PowerShell, in the folder with the three files). Install minisign once with
+`winget install jedisct1.minisign`, then reopen PowerShell.
+
+```powershell
+# 1. Is SHA256SUMS signed by the maintainer?
+minisign -Vm SHA256SUMS -P RWTM6pijKLU/GohkVvpcjRJVNVfF11xmboP51RVPN2KNBWw1AZHBbgOY
+
+# 2. Does the ZIP match SHA256SUMS?
+$want = (Get-Content SHA256SUMS -Raw).Split(' ')[0]
+$have = (Get-FileHash Desk_Critter-v3.2.zip -Algorithm SHA256).Hash
+if ($have -eq $want) { "OK: the ZIP matches" } else { "MISMATCH: don't use this ZIP" }
+```
+
+**macOS** (Terminal, in the folder with the three files). Install minisign once with `brew install minisign`.
+
+```bash
+minisign -Vm SHA256SUMS -P RWTM6pijKLU/GohkVvpcjRJVNVfF11xmboP51RVPN2KNBWw1AZHBbgOY
+shasum -a 256 -c SHA256SUMS          # Linux: sha256sum -c SHA256SUMS
+```
+
+Good results: `Signature and comment signature verified` with `Trusted comment: Desk Critter v3.2 SHA256SUMS`,
+then `OK: the ZIP matches` (Windows) or `Desk_Critter-v3.2.zip: OK` (macOS).
+If either check fails, don't unpack the ZIP; download it again from the Releases page, and if it still
+fails, please report it (see [SECURITY.md](SECURITY.md)).
+
+### Older versions
+
+v3.1 and earlier aren't signed, so they can't be checked this way. Use v3.2 or later; if you need an older
+one, install it from a clone of the official repository with `py tools\install.py v3.1 --allow-unsigned`.
 
 ## Trigger while Claude is in front (Claude Code hooks)
 
@@ -236,6 +327,8 @@ py tools\critter_run.py --name "ESP32 upload" arduino-cli upload -p COM5 --fqbn 
 - `--name "text"` names the job (default: the program's name). Use `--` before a command that itself starts with `--`.
 - Long jobs are fine: it tells the critter "still working" every minute.
 - It runs programs, not PowerShell commands. For those, wrap them: `py tools\critter_run.py pwsh -c "Copy-Item ..."`.
+- Batch files (`.bat`, `.cmd`) are refused if an argument contains `& | < > ^ % ! "`: cmd.exe would treat
+  those as commands, and they can't be quoted safely. Run such a call with `cmd /c` yourself if you mean it.
 - From the installed copy: `py C:\Users\<you>\Tools\Desk_Critter\tools\critter_run.py ...`. On a Mac use `python3 tools/critter_run.py ...`.
 
 ## Let Claude wave after every chat reply (Claude Desktop tool)
@@ -310,8 +403,10 @@ cd ~/Documents
 git clone https://github.com/elentophanes/Desk_Critter.git
 cd Desk_Critter
 ```
-Or download [the ZIP](https://github.com/elentophanes/Desk_Critter/archive/refs/heads/main.zip),
-unpack it, and `cd ~/Downloads/Desk_Critter-main`. GitHub Desktop works too.
+Or download a release ZIP with `SHA256SUMS` and `SHA256SUMS.minisig` from the
+[Releases page](https://github.com/elentophanes/Desk_Critter/releases), check it
+(see [Verify your copy](#verify-your-copy)), unpack it, and `cd` into the unpacked folder,
+e.g. `cd ~/Downloads/Desk_Critter-v3.2`. GitHub Desktop works too.
 
 ### Run it
 
@@ -336,6 +431,12 @@ The critter watches macOS' notification store. macOS requires permission:
 4. Run the critter again.
 
 This is a one-time setup; it persists across restarts.
+
+> **What this grants.** Full Disk Access applies to the *whole app*, not just the critter: every
+> script and command you run from that Terminal (or that Python) can then read all your files,
+> mail and messages. If that's too much, either skip this step (the Claude Code hooks and the
+> Claude Desktop tool still work without it; set `WATCH_NOTIFICATIONS = False` in `desk_critter.pyw`),
+> or give Full Disk Access to a separate Terminal profile/app you use only for the critter.
 
 ### Claude Code hooks (like Windows)
 
@@ -393,7 +494,8 @@ Your everyday critter is the **installed copy** (step 4 above), so `git pull` al
    py tools\install.py
    Start-Process "$env:APPDATA\Microsoft\Windows\Start Menu\Programs\Startup\Desk Critter.lnk"
    ```
-   `install.py` with no tag installs the newest version tag. Settings and log are kept; nothing is deleted.
+   `install.py` with no tag installs the newest version tag, after checking its signature
+   (`signature OK: ...`). Settings and log are kept; nothing is deleted.
 3. If the new version changed `tools/critter_mcp.py`, restart Claude Desktop too (tray icon → Quit, start it again),
    because it keeps the old copy of the wave/alert tool running.
 
@@ -405,8 +507,9 @@ Each stable version is a git tag (see **Versions** below). To put an older versi
 installed copy, quit the critter and install that tag, then start it again:
 
 ```powershell
-py tools\install.py v2.7     # install version 2.7
+py tools\install.py v3.2     # install version 3.2
 py tools\install.py          # later: back to the newest version
+py tools\install.py v3.1 --allow-unsigned    # tags before v3.2 aren't signed
 ```
 
 Files that only exist in newer versions stay in the folder (the installer never deletes anything), which is harmless.
@@ -504,18 +607,24 @@ With `DEBUG_LOG = True` events are written to `desk_critter.log` (git-ignored).
 | `tools/critter_event.py` | Wave (`done`) or alert (`help`) on demand, from your own scripts |
 | `tools/critter_run.py` | Runs any command: working dots while it runs, then green eyes or an alert |
 | `tools/critter_mcp.py` | Claude Desktop tools `wave` / `alert` (tiny MCP server) so chats can signal the critter |
-| `tools/install.py` | Installs a tagged version outside the repo, optionally with a start-with-Windows shortcut |
+| `tools/install.py` | Installs a tagged version outside the repo, optionally with a start-with-Windows shortcut; checks the tag's signature first |
+| `tools/release.py` | Maintainer only: makes a signed release (signed tag, ZIP, signed `SHA256SUMS`) |
+| `.github/allowed_signers`, `.github/minisign.pub` | The maintainer's public keys for checking tags and release ZIPs (see **Verify your copy**) |
 | `diag/attention_diag.pyw` | Diagnostic recorder used to find out how Claude signals attention |
 | `diag/notif_probe.py` | Read-only probe of the Windows notification store |
-| `diag/check.py` | Quick check: compiles every program file, lists critters, renders the preview |
+| `diag/check.py` | Quick check: compiles every program file, checks only the standard library is used, lists critters, renders the preview |
+| `diag/test_security.py` | Tests for the v3.2 security fixes (runs in a temporary folder, doesn't touch your critter) |
 | `LICENSE`, `COMMERCIAL.md` | PolyForm Noncommercial License 1.0.0; commercial licensing |
 | `CONTRIBUTING.md`, `CLA.md` | How to contribute; the Contributor License Agreement |
+| `SECURITY.md` | How to report a vulnerability or a fake copy, privately |
+| `PRIVACY.md` | Everything the critter reads, watches, writes, starts and connects to |
 | `CLAUDE.md` | Notes for Claude Code when it works on this project |
 
 ## Versions
 
 | Tag | Change |
 |---|---|
+| v3.2 | Security hardening: `~/.desk-critter` is private to you (it holds project names and Claude's messages); `desk_critter.log` rotates at 256 kB; notification databases are always opened read-only, even with `#` or `%` in the path; a double-click only starts the Start-menu app named exactly "Claude"; `critter_run` refuses risky arguments to batch files; README notes on Full Disk Access and the install folder. **Signed releases**: tags and release ZIPs are signed, `tools/install.py` refuses unsigned or foreign-signed tags (`--allow-unsigned` for older ones), `tools/release.py` for the maintainer; README **Verify your copy**, `SECURITY.md`, `PRIVACY.md`. The log no longer records other programs' window titles; `diag/check.py` also checks the main program files and that only the standard library is used |
 | v3.1 | Right-click → **About Desk Critter…** (version, installed tag, critter, Python / Tk, folder, copyright, licence), **Check for updates…**, **Mute sounds**; the tests are grouped in a **Test ▸** submenu |
 | v3.0 | Published as **Desk_Critter**: renamed from an earlier private project, general-purpose events, PolyForm Noncommercial licence |
 | v2.9 | `tools/critter_run.py`: run any command with working dots, then green eyes (success) or an alert (failure) |
