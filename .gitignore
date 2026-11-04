@@ -4,6 +4,7 @@ __pycache__/
 
 # Runtime logs
 *.log
+*.log.1
 
 # Local settings (chosen critter, remembered window position)
 desk_critter_settings.json

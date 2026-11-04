@@ -7,6 +7,8 @@
 Diagnostic recorder for Spider Critter (temporary - not part of the critter itself).
 Logs what the Claude app's windows do, plus any Windows notification pop-ups,
 to attention_diag.log next to this file. Stops by itself after RUN_MINUTES.
+Privacy: the log holds the titles of ALL windows (mail subjects, document names...).
+Delete attention_diag.log when you have finished diagnosing.
 """
 
 __author__ = "Elentophanes"

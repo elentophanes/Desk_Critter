@@ -27,7 +27,7 @@ import sys
 import time
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from critter_hook import EVENTS_PATH, MAX_BYTES     # same file and size limit as the hook
+from critter_hook import EVENTS_PATH, MAX_BYTES, ensure_events_dir     # same file, limit and folder rights
 
 KINDS = ("done", "help")                                  # what the command line accepts
 ALL_KINDS = ("done", "help", "busy", "tick", "end")       # what send() accepts (critter_run.py uses all)
@@ -41,7 +41,7 @@ def send(kind, text="", session=SESSION):
     if kind not in ALL_KINDS:
         raise ValueError(f"kind must be one of {ALL_KINDS}")
     text = " ".join(str(text).split())[:300] or DEFAULT_TEXT[kind]     # one line, no tabs
-    os.makedirs(os.path.dirname(EVENTS_PATH), exist_ok=True)
+    ensure_events_dir()
     mode = "a"
     try:
         if os.path.getsize(EVENTS_PATH) > MAX_BYTES:

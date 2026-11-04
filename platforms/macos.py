@@ -29,7 +29,7 @@ import threading
 import time
 
 from ._base import *                                   # noqa: F401,F403  (defaults)
-from ._base import log
+from ._base import log, sqlite_ro_uri
 
 NAME = "macos"
 MENU_EVENTS = ("<Button-2>", "<Button-3>", "<Control-Button-1>")
@@ -184,7 +184,7 @@ class NotificationWatcher(threading.Thread):
         errors = []
         for path in notification_db_candidates():
             try:
-                con = sqlite3.connect("file:" + path + "?mode=ro", uri=True, timeout=2)
+                con = sqlite3.connect(sqlite_ro_uri(path), uri=True, timeout=2)
                 con.execute("select count(*) from record").fetchone()
                 return con, path
             except Exception as e:

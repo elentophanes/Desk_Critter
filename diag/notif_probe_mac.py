@@ -54,7 +54,7 @@ print("frontmost app:", repr(macos.frontmost_app()))
 con = None
 for path in macos.notification_db_candidates():
     try:
-        c = sqlite3.connect("file:" + path + "?mode=ro", uri=True, timeout=2)
+        c = sqlite3.connect(macos.sqlite_ro_uri(path), uri=True, timeout=2)
         n = c.execute("select count(*) from record").fetchone()[0]
         print(f"OPENED   {path}  ({n} records)")
         con = con or c

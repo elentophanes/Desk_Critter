@@ -6,7 +6,8 @@
 """
 Desk Critter - a little critter on your desktop that waves when something has finished
 and bounces when something needs you: Claude, a long render, a compile, any command.
-Version 3.1  (right-click: About Desk Critter, Check for updates, Mute sounds; tests in a Test submenu)
+Version 3.2  (security hardening: private events folder, log rotation, safer launching and commands)
+             3.1: right-click: About Desk Critter, Check for updates, Mute sounds; tests in a Test submenu
              3.0: renamed and published as Desk_Critter; general-purpose events
              2.9: tools/critter_run.py: run any command; working dots while it runs, then green eyes or an alert
              2.8: tools/critter_mcp.py: Claude Desktop tools "wave" and "alert", so chats can signal the critter
@@ -74,7 +75,7 @@ import tkinter as tk
 import urllib.request
 import webbrowser
 
-VERSION = "3.1"
+VERSION = "3.2"
 PROJECT_URL = "https://github.com/elentophanes/Desk_Critter"
 UPDATES_URL = "https://api.github.com/repos/elentophanes/Desk_Critter/tags?per_page=100"   # only used on request
 
@@ -103,6 +104,7 @@ ALERT_HOP_PERIOD = 0.45    # seconds per hop
 ALERT_SOUND = True         # play the critter's alert sound (or the chime) when an alert starts
 ALERT_SOUND_REPEAT = 0     # repeat that sound every N seconds while alerting (0 = once)
 DEBUG_LOG = True           # log events to desk_critter.log
+LOG_MAX_BYTES = 256 * 1024 # then desk_critter.log becomes desk_critter.log.1 and starts afresh
 WATCH_NOTIFICATIONS = True # react to new system notifications from the Claude app
 NOTIFY_POLL_SECONDS = 1.5  # how often to check for new notifications
 WATCH_TASKBAR_FLASH = True # also react when Claude flashes its taskbar button
@@ -150,6 +152,11 @@ def log(text):
     if not DEBUG_LOG:
         return
     try:
+        if os.path.getsize(LOG_PATH) > LOG_MAX_BYTES:     # keep one old log, never grow forever
+            os.replace(LOG_PATH, LOG_PATH + ".1")
+    except OSError:
+        pass
+    try:
         with open(LOG_PATH, "a", encoding="utf-8") as f:
             f.write(time.strftime("%Y-%m-%d %H:%M:%S ") + text + "\n")
     except Exception:
@@ -189,7 +196,7 @@ def latest_version(timeout=6):
     req = urllib.request.Request(UPDATES_URL, headers={"User-Agent": f"Desk-Critter/{VERSION}",
                                                        "Accept": "application/vnd.github+json"})
     with urllib.request.urlopen(req, timeout=timeout) as r:
-        tags = json.loads(r.read().decode("utf-8"))
+        tags = json.loads(r.read(1_000_000).decode("utf-8"))    # a tag list is a few kB
     versions = [t["name"] for t in tags if isinstance(t, dict) and version_key(t.get("name", ""))]
     if not versions:
         raise ValueError("no version tags found")
